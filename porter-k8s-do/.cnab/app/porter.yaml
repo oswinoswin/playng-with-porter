@@ -1,0 +1,82 @@
+# This is the configuration for Porter
+# You must define steps for each action, but the rest is optional
+# See https://porter.sh/author-bundles for documentation on how to configure your bundle
+# Uncomment out the sections below to take full advantage of what Porter can do!
+
+name: porter-k8s-do
+version: 0.1.0
+description: "An example Porter configuration"
+# TODO: update the registry to your own, e.g. myregistry
+registry: getporter
+dockerfile: Dockerfile.tmpl
+credentials:
+  - name: do_access_token
+    description: "Access Token for Digital Ocean Account"
+    env: DO_ACCESS_TOKEN
+#  
+#parameters:
+#  - name: kubeconfig
+#    type: file
+#    applyTo:
+#      - upgrade
+#      - uninstall
+#    path: /root/.kube/config
+#    source:
+#      output: kubeconfig
+
+mixins:
+  - exec
+  - kubernetes
+install:
+  - exec:
+      description: "Authenticate to doctl"
+      command: "doctl"
+      arguments:
+        - "auth"
+        - "init"
+        - "-t"
+        - "{{bundle.credentials.do_access_token}}"
+  - exec:
+      description: "Start example cluster"
+      command: ./script/up
+      outputs:
+        - name: kubeconfig
+          type: file
+          path: /root/.kube/config
+upgrade:
+  - exec:
+      description: "Authenticate to doctl"
+      command: "doctl"
+      arguments:
+        - "auth"
+        - "init"
+        - "-t"
+        - "{{bundle.credentials.do_access_token}}"
+  - exec:
+      description: "Chceck context"
+      command: "kubectl"
+      arguments:
+        - "config view"
+uninstall:
+  - exec:
+      description: "Uninstall Hello World"
+      command: "echo"
+      arguments:
+        - "uninstall"
+outputs:
+  - name: kubeconfig
+
+# Below is an example of how to define credentials
+# See https://porter.sh/author-bundles/#credentials
+#credentials:
+#  - name: kubeconfig
+#    path: /root/.kube/config
+#  - name: username
+#    env: USERNAME
+
+# Below is an example of how to define parameters
+# See https://porter.sh/author-bundles/#parameters
+#parameters:
+#  - name: mysql_user
+#    type: string
+#    default: wordpress
